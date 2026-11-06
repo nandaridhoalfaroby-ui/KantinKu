@@ -5,7 +5,13 @@ import { menu, rupiah } from "@/data/menu";
 import Link from "next/link";
 
 type Keranjang = { id: number; jumlah: number };
-type Riwayat = { id: string; tanggal: string; struk: string; total: number };
+type RiwayatBaru = {
+  nama: string;
+  jumlahMenu: number;
+  total: number;
+  waktu: string;
+  detail: string; // struk lengkap
+};
 
 export default function KeranjangPage() {
   const [keranjang, setKeranjang] = useState<Keranjang[]>([]);
@@ -64,9 +70,19 @@ export default function KeranjangPage() {
     teks += `Total bayar: ${rupiah(total)}`;
 
     setStruk(teks);
-    const riwayat: Riwayat[] = JSON.parse(localStorage.getItem("riwayat") || "[]");
-    riwayat.unshift({ id: Date.now().toString(), tanggal: new Date().toISOString(), struk: teks, total });
+
+    // --- UPDATE SESUAI SPEC BARU ---
+    const riwayat: RiwayatBaru[] = JSON.parse(localStorage.getItem("riwayat") || "[]");
+    riwayat.unshift({
+      nama,
+      jumlahMenu: keranjang.reduce((a, b) => a + b.jumlah, 0),
+      total,
+      waktu: new Date().toLocaleString("id-ID"),
+      detail: teks,
+    });
     localStorage.setItem("riwayat", JSON.stringify(riwayat));
+    // --- END UPDATE ---
+
     simpan([]);
     setKode(""); setDiskon(0);
   };
@@ -76,42 +92,39 @@ export default function KeranjangPage() {
       <div className="mx-auto max-w-xl rounded- bg-[#FFFBEB] border border-orange-100 p-12 text-center">
         <p className="text-5xl">🛒</p>
         <h2 className="mt-4 font-black text-xl text-zinc-900">Keranjang masih kosong</h2>
-        <p className="text-sm text-zinc-500 mt-1">Yuk isi dulu sebelum lapar</p>
-        <Link href="/menu" className="mt-6 inline-block rounded-full bg-zinc-900 text-white px-6 py-2.5 text-sm font-bold">Lihat Menu</Link>
+        <p className="text-sm font-medium text-zinc-600 mt-1">Yuk isi dulu sebelum lapar</p>
+        <Link href="/menu" className="mt-6 inline-block rounded-full bg-[#FFC837] border border-amber-300 px-6 py-2.5 text-sm font-black text-zinc-900 hover:bg-[#FFD95E] transition">Lihat Menu</Link>
       </div>
     );
   }
 
   return (
     <div className="mx-auto max-w-6xl grid lg:grid-cols-[1.2fr_0.8fr] gap-6 items-start">
-      {/* KIRI */}
       <div className="space-y-4">
         {struk ? (
-          <div className="rounded- bg-emerald-50 border border-emerald-100 p-6">
-            <div className="h-10 w-10 rounded-full bg-emerald-500 text-white grid place-items-center font-black">✓</div>
+          <div className="rounded- bg-[#DCFCE7] border border-emerald-200 p-6">
+            <div className="h-10 w-10 rounded-full bg-emerald-400 border border-emerald-500 grid place-items-center font-black text-zinc-900">✓</div>
             <h2 className="mt-3 text-xl font-black text-zinc-900">Pesanan Berhasil!</h2>
-            <pre className="mt-4 whitespace-pre-line rounded-xl bg-white border border-emerald-100 p-4 text-sm leading-relaxed text-zinc-700 font-mono">
-              {struk}
-            </pre>
-            <Link href="/riwayat" className="mt-4 inline-block text-sm font-bold text-emerald-700 hover:underline">Lihat di riwayat →</Link>
+            <pre className="mt-4 whitespace-pre-line rounded-xl bg-[#FFFEF7] border border-emerald-200 p-4 text-sm leading-relaxed text-zinc-800 font-mono">{struk}</pre>
+            <Link href="/riwayat" className="mt-4 inline-block text-sm font-black text-zinc-900 underline">Lihat di riwayat →</Link>
           </div>
         ) : (
           keranjang.map((k) => {
             const m = menu.find((x) => x.id === k.id)!;
             return (
-              <div key={k.id} className="flex items-center justify-between rounded-2xl bg-white border border-orange-100 p-4 shadow-sm">
+              <div key={k.id} className="flex items-center justify-between rounded-2xl bg-[#FFFEF7] border border-orange-100 p-4 shadow-sm">
                 <div>
                   <p className="font-bold text-zinc-900">{m.nama}</p>
-                  <p className="text-xs text-zinc-500">{rupiah(m.harga)} • Stok {m.stok}</p>
+                  <p className="text-xs font-medium text-zinc-600">{rupiah(m.harga)} • Stok {m.stok}</p>
                 </div>
                 <div className="flex items-center gap-3">
                   <div className="flex items-center gap-1 rounded-full bg-[#FFFBEB] border border-orange-100 p-1">
-                    <button onClick={() => { if (k.jumlah > 1) simpan(keranjang.map(x => x.id === k.id ? { ...x, jumlah: x.jumlah - 1 } : x)) }} className="h-7 w-7 rounded-full bg-white border border-orange-100 grid place-items-center font-bold">−</button>
-                    <span className="w-6 text-center text-sm font-bold">{k.jumlah}</span>
-                    <button onClick={() => { if (k.jumlah < m.stok) simpan(keranjang.map(x => x.id === k.id ? { ...x, jumlah: x.jumlah + 1 } : x)) }} className="h-7 w-7 rounded-full bg-white border border-orange-100 grid place-items-center font-bold">+</button>
+                    <button onClick={() => { if (k.jumlah > 1) simpan(keranjang.map(x => x.id === k.id ? { ...x, jumlah: x.jumlah - 1 } : x)) }} className="h-7 w-7 rounded-full bg-[#FFFEF7] border border-orange-100 grid place-items-center font-black text-zinc-900">−</button>
+                    <span className="w-6 text-center text-sm font-black text-zinc-900">{k.jumlah}</span>
+                    <button onClick={() => { if (k.jumlah < m.stok) simpan(keranjang.map(x => x.id === k.id ? { ...x, jumlah: x.jumlah + 1 } : x)) }} className="h-7 w-7 rounded-full bg-[#FFFEF7] border border-orange-100 grid place-items-center font-black text-zinc-900">+</button>
                   </div>
-                  <span className="w- text-right text-sm font-black">{rupiah(m.harga * k.jumlah)}</span>
-                  <button onClick={() => simpan(keranjang.filter(x => x.id !== k.id))} className="text-zinc-400 hover:text-red-600 text-sm ml-2">✕</button>
+                  <span className="w- text-right text-sm font-black text-zinc-900">{rupiah(m.harga * k.jumlah)}</span>
+                  <button onClick={() => simpan(keranjang.filter(x => x.id !== k.id))} className="font-bold text-zinc-500 hover:text-red-600 text-sm ml-2">✕</button>
                 </div>
               </div>
             );
@@ -119,33 +132,30 @@ export default function KeranjangPage() {
         )}
       </div>
 
-      {/* KANAN - SUMMARY */}
       {!struk && (
         <div className="rounded- bg-[#FFFBEB] border border-orange-100 p-6 sticky top-24">
           <h3 className="font-black text-zinc-900">Ringkasan Pesanan</h3>
-          
           <div className="mt-4 flex gap-2">
-            <input value={kode} onChange={e=>setKode(e.target.value)} placeholder="HEMAT10" className="flex-1 rounded-full bg-white border border-orange-100 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-200"/>
-            <button onClick={handlePromo} className="rounded-full bg-zinc-900 text-white px-5 text-sm font-bold hover:bg-black transition">Pakai</button>
+            <input value={kode} onChange={e=>setKode(e.target.value)} placeholder="HEMAT10" className="flex-1 rounded-full bg-[#FFFEF7] border border-orange-100 px-4 py-2.5 text-sm font-bold text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-amber-300"/>
+            <button onClick={handlePromo} className="rounded-full bg-[#FFC837] border border-amber-300 px-5 text-sm font-black text-zinc-900 hover:bg-[#FFD95E] transition">Pakai</button>
           </div>
-          {pesanPromo && <p className={`mt-2 text-xs font-semibold px-1 ${pesanPromo.includes("Mantap") ? "text-emerald-600" : "text-red-500"}`}>{pesanPromo}</p>}
+          {pesanPromo && <p className={`mt-2 text-xs font-bold px-1 ${pesanPromo.includes("Mantap") ? "text-emerald-700" : "text-red-600"}`}>{pesanPromo}</p>}
 
-          <div className="mt-6 rounded-2xl bg-white border border-orange-100 p-1 flex">
-            <button onClick={()=>setCara("ambil")} className={`flex-1 rounded-xl py-2.5 text-sm font-bold transition ${cara==="ambil" ? "bg-zinc-900 text-white shadow" : "text-zinc-500"}`}>Ambil Sendiri</button>
-            <button onClick={()=>setCara("antar")} className={`flex-1 rounded-xl py-2.5 text-sm font-bold transition ${cara==="antar" ? "bg-zinc-900 text-white shadow" : "text-zinc-500"}`}>Diantar +2k</button>
+          <div className="mt-6 rounded-2xl bg-[#FFFEF7] border border-orange-100 p-1 flex">
+            <button onClick={()=>setCara("ambil")} className={`flex-1 rounded-xl py-2.5 text-sm font-black transition ${cara==="ambil" ? "bg-[#FFC837] border border-amber-300 text-zinc-900 shadow-sm" : "text-zinc-600"}`}>Ambil Sendiri</button>
+            <button onClick={()=>setCara("antar")} className={`flex-1 rounded-xl py-2.5 text-sm font-black transition ${cara==="antar" ? "bg-[#FFC837] border border-amber-300 text-zinc-900 shadow-sm" : "text-zinc-600"}`}>Diantar +2k</button>
           </div>
-          
-          {cara==="antar" && <input value={kelas} onChange={e=>setKelas(e.target.value)} placeholder="Tulis kelas lo, contoh: XII RPL 2" className="mt-3 w-full rounded-xl bg-white border border-orange-100 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-200"/>}
+          {cara==="antar" && <input value={kelas} onChange={e=>setKelas(e.target.value)} placeholder="Tulis kelas lo, contoh: XII RPL 2" className="mt-3 w-full rounded-xl bg-[#FFFEF7] border border-orange-100 px-4 py-2.5 text-sm font-bold text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-amber-300"/>}
 
           <div className="mt-6 space-y-2 text-sm border-t border-orange-100 pt-4">
-            <div className="flex justify-between text-zinc-600"><span>Subtotal</span><span>{rupiah(subtotal)}</span></div>
-            {diskon>0 && <div className="flex justify-between text-emerald-600 font-semibold"><span>Diskon HEMAT10</span><span>-{rupiah(diskon)}</span></div>}
-            {cara==="antar" && <div className="flex justify-between text-zinc-600"><span>Ongkir</span><span>{rupiah(ongkir)}</span></div>}
+            <div className="flex justify-between font-medium text-zinc-700"><span>Subtotal</span><span className="font-bold text-zinc-900">{rupiah(subtotal)}</span></div>
+            {diskon>0 && <div className="flex justify-between font-bold text-emerald-700"><span>Diskon HEMAT10</span><span>-{rupiah(diskon)}</span></div>}
+            {cara==="antar" && <div className="flex justify-between font-medium text-zinc-700"><span>Ongkir</span><span className="font-bold text-zinc-900">{rupiah(ongkir)}</span></div>}
             <div className="flex justify-between font-black text-base text-zinc-900 pt-2"><span>Total</span><span>{rupiah(total)}</span></div>
           </div>
 
-          <input value={nama} onChange={e=>setNama(e.target.value)} placeholder="Nama pemesan (min 3 huruf)" className="mt-6 w-full rounded-xl bg-white border border-orange-100 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-200"/>
-          <button onClick={handlePesan} className="mt-3 w-full rounded-full bg-zinc-900 py-3.5 text-sm font-bold text-white shadow-lg shadow-zinc-900/20 hover:bg-black hover:-translate-y-0.5 transition-all">
+          <input value={nama} onChange={e=>setNama(e.target.value)} placeholder="Nama pemesan (min 3 huruf)" className="mt-6 w-full rounded-xl bg-[#FFFEF7] border border-orange-100 px-4 py-3 text-sm font-bold text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-amber-300"/>
+          <button onClick={handlePesan} className="mt-3 w-full rounded-full bg-[#FFC837] border-2 border-amber-400 py-3.5 text-sm font-black text-zinc-900 shadow-md hover:bg-[#FFD95E] hover:-translate-y-0.5 transition-all">
             Pesan Sekarang • {rupiah(total)}
           </button>
         </div>
